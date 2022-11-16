@@ -5,10 +5,10 @@
 #######################################################################################
 ##############################   MODEL FITTING ########################################
 #######################################################################################
-### Esse é o script principal, usado para ajustar um modelo de distribuição com Boosted
-### Regression Trees (BRT) e tranferi-lo para cenários futuros de mudanças climáticas. 
-### A AUC é usada para avaliar os modelos; para isso os dados de espécies sao  
-### particionados em dados de treino e teste.
+### This is the main script, used to fit a specie distribution model with Boosted
+### Regression Trees (BRT) method and transfer it to future climate change scenarios.
+### AUC is used to evaluate the models. For this the species data are partitioned into 
+### training and test data
 #######################################################################################
 ###################################  Index  ###########################################
 ### 1 - Load packages
@@ -24,7 +24,7 @@
 
 rm(list = ls(all = TRUE))
 # Set a directory
-setwd ("C:/Tfunalis")
+setwd ("C:/Tinamoena")
 getwd()
 
 #Load Packages
@@ -47,7 +47,7 @@ ext = extent(-45, -34, -17, -2)
 ### load predictors layers used in model trainning
 
 # finds all the files with extension "asc" in the directory 
-files <- list.files(path=paste('C:/Tfunalis/Layers', sep=''), 
+files <- list.files(path=paste('C:/Tinamoena/Layers', sep=''), 
 pattern='asc', full.names=TRUE)
 predictors <- stack(files) # create a raster stack
 # Project stack if layers is not project
@@ -60,28 +60,28 @@ plot(predictors)
 
 ### SSP 245 for 2050 scenario
 # finds all the files with extension "asc" in the directory 
-files1 <- list.files(path=paste('C:/Tfunalis/Layers_1', sep=''), 
+files1 <- list.files(path=paste('C:/Tinamoena/Layers_1', sep=''), 
 pattern='asc', full.names=TRUE)
 transfer1 <- stack(files1) # create a raster stack
 projection(transfer1) <- CRS('+proj=longlat +datum=WGS84') # Project stack
 
 ### SSP 585 for 2050 scenario
 # finds all the files with extension "asc" in the directory
-files2 <- list.files(path=paste('C:/Tfunalis/Layers_2', sep=''), 
+files2 <- list.files(path=paste('C:/Tinamoena/Layers_2', sep=''), 
 pattern='asc', full.names=TRUE)
 transfer2 <- stack(files2) # create a raster stack
 projection(transfer2) <- CRS('+proj=longlat +datum=WGS84') # Project stack
 
 ### SSP 245 for 2070 scenario
 # finds all the files with extension "asc" in the directory
-files3 <- list.files(path=paste('C:/Tfunalis/Layers_3', sep=''), 
+files3 <- list.files(path=paste('C:/Tinamoena/Layers_3', sep=''), 
 pattern='asc', full.names=TRUE)
 transfer3 <- stack(files3) # create a raster stack
 projection(transfer3) <- CRS('+proj=longlat +datum=WGS84') # Project stack
 
 ### SSP 585 for 2070 scenario
 # finds all the files with extension "asc" in the directory
-files4 <- list.files(path=paste('C:/Tfunalis/Layers_4', sep=''), 
+files4 <- list.files(path=paste('C:/Tinamoena/Layers_4', sep=''), 
 pattern='asc', full.names=TRUE)
 transfer4 <- stack(files4) # create a raster stack
 projection(transfer4) <- CRS('+proj=longlat +datum=WGS84') # Project stack
@@ -89,25 +89,25 @@ projection(transfer4) <- CRS('+proj=longlat +datum=WGS84') # Project stack
 ################################## Presence Data ######################################
 
 # this is the file wich presence records we will use:
-file <- paste("C:/Tfunalis/T_funalis.csv", sep="")
-funalis <- read.table(file, header=TRUE, sep=',')
+file <- paste("C:/Tinamoena/T_inamoena.csv", sep="")
+inamoena <- read.table(file, header=TRUE, sep=',')
 # we do not need the first column
-funalis <- funalis[,-1]
+inamoena <- inamoena[,-1]
 # extract values of the predictors at the presence points
-presValues <- extract(predictors, funalis)
+presValues <- extract(predictors, inamoena)
 # first layer of the RasterStack
 plot(predictors, 1)
-points(funalis, col='red', pch='+')
+points(inamoena, col='red', pch='+')
 
 ################################# Absences Data #######################################
 
 # Define a mask layer for absence sampling
-abscMask <- raster("C:/Tfunalis/absence_mask_funalis.asc")
+abscMask <- raster("C:/Tinamoena/absence_mask_inamoena.asc")
 projection(abscMask) <- CRS('+proj=longlat +datum=WGS84') # Project
 
 # Create absence sample
 set.seed(0) # setting random seed to always create the same random set
-absence <- randomPoints(abscMask, 200) # select 200 random points
+absence <- randomPoints(abscMask, 273) # select 273 random points
 # extract values from predictors to absences points
 abscValues <- extract(predictors, absence)
 points(absence, col='blue', pch='+')
@@ -153,13 +153,19 @@ train <- c(rep(1, nrow(trainPres)), rep(0, nrow(trainAbsc)))
 # create a dataframe for train
 train.data <- data.frame(cbind(train, rbind(trainPres, trainAbsc)))
 
+# define 'soil' as categorical variable (called a 'factor' in R )
+train.data[,'soil'] = as.factor(train.data[,'soil'])
+
 # differentiate presence and abscense values
 test <- c(rep(1, nrow(testPres)), rep(0, nrow(testAbsc)))
 # create a dataframe for test
 test.data <- data.frame(cbind(test, rbind(testPres, testAbsc)))
 
+# define 'soil' as categorical variable (called a 'factor' in R )
+test.data[,'soil'] = as.factor(test.data[,'soil'])
+
 # function gbm.step()is used (Ridgeway, 2006 and Elith et al. 2008)
-funalis.tc2.lr002 <- gbm.step(data=train.data,
+inamoena.tc2.lr002 <- gbm.step(data=train.data,
 gbm.x = 2:9,
 gbm.y = 1,
 family = "bernoulli",
@@ -168,9 +174,9 @@ learning.rate = 0.002,
 bag.fraction = 0.5)
 
 ### Test data
-#Predict values for test data
-preds <- predict.gbm(funalis.tc2.lr002, test.data, 
-n.trees=funalis.tc2.lr002$gbm.call$best.trees, type="response")
+### Predict values for test data
+preds <- predict.gbm(inamoena.tc2.lr002, test.data, 
+n.trees=inamoena.tc2.lr002$gbm.call$best.trees, type="response")
 
 # Calculate deviance
 calc.deviance(obs=test.data$test, pred=preds, calc.mean=TRUE)
@@ -181,19 +187,19 @@ pres <- d[d[,1]==1, 2]
 absc <- d[d[,1]==0, 2]
 e[[w]] <- evaluate(p=pres, a=absc)
 
-varCon[[w]] <- funalis.tc2.lr002$contributions
+varCon[[w]] <- inamoena.tc2.lr002$contributions
 
 # models tranfers
-brt[[w]] <- predict(predictors, funalis.tc2.lr002, 
-n.trees=funalis.tc2.lr002$gbm.call$best.trees, type="response")# current 
-brt1[[w]] <- predict(transfer1, funalis.tc2.lr002, 
-n.trees=funalis.tc2.lr002$gbm.call$best.trees, type="response")# SSP 245 for 2050 
-brt2[[w]] <- predict(transfer2, funalis.tc2.lr002, 
-n.trees=funalis.tc2.lr002$gbm.call$best.trees, type="response")# SSP 585 for 2050 
-brt3[[w]] <- predict(transfer3, funalis.tc2.lr002, 
-n.trees=funalis.tc2.lr002$gbm.call$best.trees, type="response")# SSP 245 for 2070 
-brt4[[w]] <- predict(transfer4, funalis.tc2.lr002, 
-n.trees=funalis.tc2.lr002$gbm.call$best.trees, type="response")# SSP 585 for 2070 
+brt[[w]] <- predict(predictors, inamoena.tc2.lr002, 
+n.trees=inamoena.tc2.lr002$gbm.call$best.trees, type="response")# current 
+brt1[[w]] <- predict(transfer1, inamoena.tc2.lr002, 
+n.trees=inamoena.tc2.lr002$gbm.call$best.trees, type="response")# SSP 245 for 2050 
+brt2[[w]] <- predict(transfer2, inamoena.tc2.lr002, 
+n.trees=inamoena.tc2.lr002$gbm.call$best.trees, type="response")# SSP 585 for 2050 
+brt3[[w]] <- predict(transfer3, inamoena.tc2.lr002, 
+n.trees=inamoena.tc2.lr002$gbm.call$best.trees, type="response")# SSP 245 for 2070 
+brt4[[w]] <- predict(transfer4, inamoena.tc2.lr002, 
+n.trees=inamoena.tc2.lr002$gbm.call$best.trees, type="response")# SSP 585 for 2070 
 }
 
 # extract AUC values
@@ -210,13 +216,13 @@ varCon[[11]], varCon[[12]], varCon[[13]], varCon[[14]], varCon[[15]], varCon[[16
 varCon[[17]], varCon[[18]], varCon[[19]], varCon[[20]])
 
 # AUC values are exported as .asc file
-write.csv(x = auc, file = "C:/Tfunalis/BRT/testAucValues.csv")
+write.csv(x = auc, file = "C:/Tinamoena/BRT/testAucValues.csv")
 
 # threshold values are exported as .asc file
-write.csv(x = mst, file = "C:/Tfunalis/BRT/msthresholdValues.csv")
+write.csv(x = mst, file = "C:/Tinamoena/BRT/msthresholdValues.csv")
 
 # Variables contributions values are exported as .asc file
-write.csv(x = varContributions, file = "C:/Tfunalis/BRT/variables_contributions.csv")
+write.csv(x = varContributions, file = "C:/Tinamoena/BRT/variables_contributions.csv")
 
 #######################################################################################
 ########################## 4 - Combining models predictions ###########################
@@ -275,39 +281,39 @@ presAbsc4 <- (m4 > threshold) # SSP 285 for 2070 scenario
 
 # suitability map (current scenario)			
 writeRaster(m,
-            filename  = "C:/Tfunalis/BRT/current_BRT.asc",
+            filename  = "C:/Tinamoena/BRT/current_BRT.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
 			
 writeRaster(presAbsc,
-            filename  = "C:/Tfunalis/BRT/current_BRT_pa.asc",
+            filename  = "C:/Tinamoena/BRT/current_BRT_pa.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
 			
 # suitability map (SSP 245 for 2050 scenario)
 writeRaster(m1,
-            filename  = "C:/Tfunalis/BRT/2050_SSP245_BRT.asc",
+            filename  = "C:/Tinamoena/BRT/2050_SSP245_BRT.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
 			
 writeRaster(presAbsc1,
-            filename  = "C:/Tfunalis/BRT/2050_SSP245_BRT_pa.asc",
+            filename  = "C:/Tinamoena/BRT/2050_SSP245_BRT_pa.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
 
 # suitability map (SSP 585 for 2050 scenario)
 writeRaster(m2,
-            filename  = "C:/Tfunalis/BRT/2050_SSP585_BRT.asc",
+            filename  = "C:/Tinamoena/BRT/2050_SSP585_BRT.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)
 			
 writeRaster(presAbsc2,
-            filename  = "C:/Tfunalis/BRT/2050_SSP585_BRT_pa.asc",
+            filename  = "C:/Tinamoena/BRT/2050_SSP585_BRT_pa.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
@@ -315,13 +321,13 @@ writeRaster(presAbsc2,
 
 # suitability map (SSP 245 for 2070 scenario) 			
 writeRaster(m3,
-            filename  = "C:/Tfunalis/BRT/2070_SSP245_BRT.asc",
+            filename  = "C:/Tinamoena/BRT/2070_SSP245_BRT.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
 			
 writeRaster(presAbsc3,
-            filename  = "C:/Tfunalis/BRT/2070_SSP245_BRT_pa.asc",
+            filename  = "C:/Tinamoena/BRT/2070_SSP245_BRT_pa.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
@@ -329,13 +335,13 @@ writeRaster(presAbsc3,
 
 # suitability map (SSP 585 for 2070 scenario)	
 writeRaster(m4,
-            filename  = "C:/Tfunalis/BRT/2070_SSP585_BRT.asc",
+            filename  = "C:/Tinamoena/BRT/2070_SSP585_BRT.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
 			
 writeRaster(presAbsc4,
-            filename  = "C:/Tfunalis/BRT/2070_SSP585_BRT_pa.asc",
+            filename  = "C:/Tinamoena/BRT/2070_SSP585_BRT_pa.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	

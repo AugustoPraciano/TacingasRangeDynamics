@@ -1,10 +1,9 @@
 #######################################################################################
 ################################### 1 - Null Models ###################################
 #######################################################################################
-### Esse script é usado para criar e avaliar 1.000 modelos de distribuição nulos, e 
-### deve ser execultado após o script principal "A2_Model_Fitting". Os modelos nulos 
-### são usados para testar a significância dos modelos criados com dados de espécies 
-### reais
+### This script is used to create and evaluate 1000 null distribution models, and
+### must be executed after the main script "A2_Model_Fitting_BRT". Null models had been
+### used to test the significance of models created with real species data
 
 # setting random seed to always create the same random set
 set.seed(1993)
@@ -25,11 +24,11 @@ testAbsc <- abscValues[abscSamp,]
 
 # a set of randon points are used like presence records to fit the model
 # same sample size of specie presence records (75% of total)
-presNull <- randomPoints(predictors, 21) 
+presNull <- randomPoints(predictors, 205) 
 trainPresNull <- extract(predictors, presNull)
 # a set of randon points are used like absence records to fit the model
 # same sample size of absence records (75% of total)
-abscNull <- randomPoints(predictors, 150)
+abscNull <- randomPoints(predictors, 205)
 trainAbscNull <- extract(predictors, abscNull)
 
 # differentiate null presences and null absence values 
@@ -37,10 +36,15 @@ trainNull <- c(rep(1, nrow(trainPresNull)), rep(0, nrow(trainAbscNull)))
 # create a dataframe for train
 train.dataNull <- data.frame(cbind(trainNull, rbind(trainPresNull, trainAbscNull)))
 
+# define 'soil' as categorical variable (called a 'factor' in R )
+train.dataNull[,'soil'] = as.factor(train.dataNull[,'soil'])
+
 # differentiate presence and abscense values
 test <- c(rep(1, nrow(testPres)), rep(0, nrow(testAbsc)))
 # create a dataframe for test
 test.data <- data.frame(cbind(test, rbind(testPres, testAbsc)))
+# define 'soil' as categorical variable (called a 'factor' in R )
+test.data[,'soil'] = as.factor(test.data[,'soil'])
 
 #######################################################################################
 # function gbm.fixed()is used (Ridgeway, 2006 and Elith et al. 2008)
@@ -64,7 +68,7 @@ nullEval[[i]] <- evaluate(p=pres, a=absc)
 # extract null AUC values
 nullAuc <- sapply( nullEval, function(x){slot(x, 'auc')} )
 # null AUC values are exported as .asc file
-write.csv(x = nullAuc, file = "C:/Tfunalis/BRT/testNullAucValues.csv")
+write.csv(x = nullAuc, file = "C:/Tinamoena/BRT/testNullAucValues.csv")
 
 #######################################################################################
 ################################  END OF CODE  ########################################
