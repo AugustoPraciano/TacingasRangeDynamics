@@ -64,28 +64,28 @@ plot(predictors)
 
 ### SSP 245 for 2050 scenario
 # finds all the files with extension "asc" in the directory 
-files1 <- list.files(path=paste('C:/Tfunalis/Layers_1', sep=''), 
+files1 <- list.files(path=paste('C:/Tinamoena/Layers_1', sep=''), 
 pattern='asc', full.names=TRUE)
 transfer1 <- stack(files1) # create a raster stack
 projection(transfer1) <- CRS('+proj=longlat +datum=WGS84') # Project stack
 
 ### SSP 585 for 2050 scenario
 # finds all the files with extension "asc" in the directory
-files2 <- list.files(path=paste('C:/Tfunalis/Layers_2', sep=''), 
+files2 <- list.files(path=paste('C:/Tinamoena/Layers_2', sep=''), 
 pattern='asc', full.names=TRUE)
 transfer2 <- stack(files2) # create a raster stack
 projection(transfer2) <- CRS('+proj=longlat +datum=WGS84') # Project stack
 
 ### SSP 245 for 2070 scenario
 # finds all the files with extension "asc" in the directory
-files3 <- list.files(path=paste('C:/Tfunalis/Layers_3', sep=''), 
+files3 <- list.files(path=paste('C:/Tinamoena/Layers_3', sep=''), 
 pattern='asc', full.names=TRUE)
 transfer3 <- stack(files3) # create a raster stack
 projection(transfer3) <- CRS('+proj=longlat +datum=WGS84') # Project stack
 
 ### SSP 585 for 2070 scenario
 # finds all the files with extension "asc" in the directory
-files4 <- list.files(path=paste('C:/Tfunalis/Layers_4', sep=''), 
+files4 <- list.files(path=paste('C:/Tinamoena/Layers_4', sep=''), 
 pattern='asc', full.names=TRUE)
 transfer4 <- stack(files4) # create a raster stack
 projection(transfer4) <- CRS('+proj=longlat +datum=WGS84') # Project stack
@@ -93,15 +93,15 @@ projection(transfer4) <- CRS('+proj=longlat +datum=WGS84') # Project stack
 #################################### Presence Data ####################################
 
 # this is the file wich presence records we will use:
-file <- paste("C:/Tfunalis/T_funalis.csv", sep="")
-funalis <- read.table(file, header=TRUE, sep=',')
+file <- paste("C:/Tinamoena/T_inamoena.csv", sep="")
+inamoena <- read.table(file, header=TRUE, sep=',')
 # we do not need the first column
-funalis <- funalis[,-1]
+inamoena <- inamoena[,-1]
 # extract values of the predictors at the presence points
-presValues <- extract(predictors, funalis)
+presValues <- extract(predictors, inamoena)
 # plot first layer of the RasterStack
 plot(predictors, 1)
-points(funalis, col='red', pch='+')
+points(inamoena, col='red', pch='+')
 
 ################################# Background Data #####################################
 
@@ -141,28 +141,30 @@ testPres <- presValues[-samp,]
 trainData <- data.frame(rbind(trainPres, backValues)) # create a dataframe for train
 # differentiate presence and background values
 pb <- c(rep(1, nrow(trainPres)), rep(0, nrow(backValues)))
-#'soil' is categorical variable (called a 'factor' in R )
-#trainData[,'soil'] = as.factor(trainData[,'soil'])
+
+# define 'soil' as categorical variable (called a 'factor' in R)
+trainData[,'soil'] = as.factor(trainData[,'soil'])
 
 # differentiate presence and abscense (background) values
 pa <- c(rep(1, nrow(testPres)), rep(0, nrow(backValues)))
 # create a dataframe for test
 testData <- data.frame(cbind(pa, rbind(testPres, backValues)))
-#'soil' is categorical variable (called a 'factor' in R )
-#testData[,'soil'] = as.factor(testData[,'soil'])
+
+# define 'soil' as categorical variable (called a 'factor' in R)
+testData[,'soil'] = as.factor(testData[,'soil'])
 
 ### Fitting a model
 # function maxent() is used(Hijmans & al., 2013)
 mx <- maxent(trainData, 
              pb,
-			 path = "C:/Tfunalis/Maxent/output",
+			 path = "C:/Tinamoena/Maxent/output",
 			 args = c("redoifexists", "notooltips", "noautofeature", "linear", 
-			 "quadratic", "nohinge", "noproduct", "nothreshold"))
+			 "quadratic", "hinge", "product", "threshold"))
 
 # models evaluate
 e[[w]] <- evaluate(testData[testData==1,], testData[testData==0,], mx)
 # Maxent results are exported as .asc file
-maxResults[[w]] <- read.csv("C:/Tfunalis/Maxent/output/maxentResults.csv") 
+maxResults[[w]] <- read.csv("C:/Tinamoena/Maxent/output/maxentResults.csv") 
 # models tranfers
 pmx[[w]] <- predict(predictors, mx, ext=ext, progress='') # current scenario
 pmx1[[w]] <- predict(transfer1, mx, ext=ext, progress='') # SSP 245 for 2050 scenario
@@ -186,13 +188,13 @@ maxResults[[13]], maxResults[[14]], maxResults[[15]], maxResults[[16]],
 maxResults[[17]], maxResults[[18]], maxResults[[19]], maxResults[[20]]))
 
 # AUC values are exported as .asc file
-write.csv(x = auc, file = "C:/Tfunalis/Maxent/testAucValues.csv")
+write.csv(x = auc, file = "C:/Tinamoena/Maxent/testAucValues.csv")
 
 # threshold values are exported as .asc file
-write.csv(x = mst, file = "C:/Tfunalis/Maxent/msthresholdValues.csv")
+write.csv(x = mst, file = "C:/Tinamoena/Maxent/msthresholdValues.csv")
 
 # Maxent results are exported as .asc file
-write.csv(x = maxentResults, file = "C:/Tfunalis/Maxent/maxentResults.csv")
+write.csv(x = maxentResults, file = "C:/Tinamoena/Maxent/maxentResults.csv")
 
 #######################################################################################
 ########################## 4 - Combining models predictions ###########################
@@ -251,65 +253,65 @@ presAbsc4 <- (m4 > threshold) # SSP 585 for 2070 scenario
 
 # suitability map (current scenario)
 writeRaster(m,
-            filename  = "C:/Tfunalis/Maxent/current_ME.asc",
+            filename  = "C:/Tinamoena/Maxent/current_ME.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)
 			
 writeRaster(presAbsc,
-            filename  = "C:/Tfunalis/Maxent/current_ME_pa.asc",
+            filename  = "C:/Tinamoena/Maxent/current_ME_pa.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)			
 
 # suitability map (SSP 245 for 2050 scenario)
 writeRaster(m1,
-            filename  = "C:/Tfunalis/Maxent/2050_SSP245_ME.asc",
+            filename  = "C:/Tinamoena/Maxent/2050_SSP245_ME.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)
 			
 writeRaster(presAbsc1,
-            filename  = "C:/Tfunalis/Maxent/2050_SSP245_ME_pa.asc",
+            filename  = "C:/Tinamoena/Maxent/2050_SSP245_ME_pa.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
 
 # suitability map (SSP 585 for 2050 scenario)
 writeRaster(m2,
-            filename  = "C:/Tfunalis/Maxent/2050_SSP585_ME.asc",
+            filename  = "C:/Tinamoena/Maxent/2050_SSP585_ME.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)		
 			
 writeRaster(presAbsc2,
-            filename  = "C:/Tfunalis/Maxent/2050_SSP585_ME_pa.asc",
+            filename  = "C:/Tinamoena/Maxent/2050_SSP585_ME_pa.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
 
 # suitability map (SSP 245 for 2070 scenario) 	
 writeRaster(m3,
-            filename  = "C:/Tfunalis/Maxent/2070_SSP245_ME.asc",
+            filename  = "C:/Tinamoena/Maxent/2070_SSP245_ME.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
 			
 writeRaster(presAbsc3,
-            filename  = "C:/Tfunalis/Maxent/2070_SSP245_ME_pa.asc",
+            filename  = "C:/Tinamoena/Maxent/2070_SSP245_ME_pa.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
 
 # suitability map (SSP 585 for 2070 scenario)
 writeRaster(m4,
-            filename  = "C:/Tfunalis/Maxent/2070_SSP585_ME.asc",
+            filename  = "C:/Tinamoena/Maxent/2070_SSP585_ME.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)	
 			
 writeRaster(presAbsc4,
-            filename  = "C:/Tfunalis/Maxent/2070_SSP585_ME_pa.asc",
+            filename  = "C:/Tinamoena/Maxent/2070_SSP585_ME_pa.asc",
             format    = 'ascii',
             NAflag    = -9999,
             overwrite = TRUE)			
