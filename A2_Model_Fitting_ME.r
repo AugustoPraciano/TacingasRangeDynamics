@@ -5,10 +5,9 @@
 #######################################################################################
 ##############################   MODEL FITTING ########################################
 #######################################################################################
-### Esse é o script principal, usado para ajustar um modelo de distribuição Maxent e 
-### tranferi-lo para cenários futuros de mudanças climáticas. A AUC é usada para
-### avaliar os modelos; para isso os dados de espécies sao particionados em dados 
-### de treino e teste.
+### This is the main script used to fit a Maxent distribution model and transfer it to 
+### future climate change scenarios. AUC is used to evaluate the models. For this
+### the species data are partitioned into training and test data
 #######################################################################################
 ###################################  Index  ###########################################
 ### 1 - Load packages
@@ -24,7 +23,7 @@
 
 rm(list = ls(all = TRUE))
 # Set a directory
-setwd ("C:/Tfunalis")
+setwd ("C:/Tinamoena")
 getwd()
 
 #Load Packages
@@ -34,7 +33,6 @@ library(dismo) # for evaluate() & maxent() functions
 library(rJava) # required for dismo
 library(maptools) # readShapeSpatial() function
 library(rgeos) # required for maptools
-#library(SDMTools) #asc2dataframe function
 library(Hmisc) # rcorr() function
 library(ade4) # dudi.pca() function
 library(factoextra) # get_eigenvalue() function
@@ -44,8 +42,8 @@ data(wrld_simpl) # countries boundaries
 #######################################################################################
 ############## 2 - Load data(predictors layers, presences & background) ###############
 #######################################################################################
-##### os dados preparados no apêndice 1 devem estar contidos nos seus respectivos ##### 
-################# diretórios, portanto, primeiro defina os diretórios #################
+##### Data that was prepared in "A1 Data Preparation" must be contained in their ###### 
+##################### directories, so first define the directories ####################
 
 # Define the extent of a rectangular study area: lon 45W 34W; lat 2S 17S
 ext = extent(-45, -34, -17, -2)
@@ -55,7 +53,7 @@ ext = extent(-45, -34, -17, -2)
 ### load predictors layers used in model trainning
 
 # finds all the files with extension "asc" in the directory 
-files <- list.files(path=paste('C:/Tfunalis/Layers', sep=''), 
+files <- list.files(path=paste('C:/Tinamoena/Layers', sep=''), 
 pattern='asc', full.names=TRUE)
 predictors <- stack(files) # create a raster stack
 projection(predictors) <- CRS('+proj=longlat +datum=WGS84') # Project stack
